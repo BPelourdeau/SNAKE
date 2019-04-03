@@ -1,0 +1,45 @@
+h1 {
+	font-family: 'Dokdo', cursive;
+	font-size: 64px;
+}
+h2 {
+	font-family: 'Times New Roman';
+	font-size: 32px;
+	color: blue;
+}
+
+body {
+	text-align: center;
+}
+
+.blue{
+	color: blue;
+	margin: auto 0;
+	padding: auto 0;
+}
+
+.green{
+	color: green;
+	
+}
+
+.red{
+	color: red;
+}
+
+.grey{
+	color: grey;
+}
+.black{
+	color: black;
+}
+.violet{
+	color: violet;
+}
+.pink{
+	color: pink;
+}
+
+span {
+	display: inline-block;
+}
