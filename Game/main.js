@@ -1,13 +1,12 @@
-import "Phaser";
-
 const gameState = {
 	score: 0,
 	xInit: 7,
 	yInit: 7,
-	xMax: 15,
+	xMax: 20,
 	yMax: 15,
 	corridorSize: 20,
-	speed: 100 //means x pixels/sec
+	speed: 30, //means x pixels/sec
+	move: true
 };
 
 const config = {
@@ -30,10 +29,11 @@ const config = {
 	}
 };
 
-const pos = {
-	x: [],
-	y: []
-};
+const state = [{x: 0, y:0, direction: "right"}];
+const posT = {
+	x: 0,
+	y: 0
+}
 
 const game = new Phaser.Game(config);
 
@@ -48,20 +48,22 @@ function create(){
 		'snakehead').setScale(0.6);
 	gameState.cursors = this.input.keyboard.createCursorKeys();
 	gameState.direct = "right";
+	console.log("running");
 	gameState.baby.setCollideWorldBounds(false);
-	pos.x[0] = gameState.xInit;
-	pos.y[0] = gameState.yInit;
-	gameState.toys = this.add.group();
-	const vec = genToysXY();
+	state[0].x = gameState.xInit;
+	state[0].y = gameState.yInit;
+	state[0].direction = gameState.direct;
+	gameState.toys = this.physics.add.group();
+	genToyXY(posT);
 	gameState.toy = this.physics.add.sprite(
-		Math.floor((vec[0] - 1/2) * gameState.corridorSize),
-		Math.floor((vec[1] - 1/2) * gameState.corridorSize),
+		Math.floor((posT.x - 1/2) * gameState.corridorSize),
+		Math.floor((posT.y - 1/2) * gameState.corridorSize),
 		'snakehead').setScale(0.5);
-	gameState.information = this.add.text(10,10,"Information:", { color: '#ffffff' });
-	gameState.timedLoop = this.time.addEvent({ delay: Math.floor(20*1000/gameState.speed), callback: updateDirection, callbackScope: this, loop: true });
+	gameState.information = this.add.text(10,10,"Information: " + state[0].direction, { color: '#ffffff' });
+	gameState.timedLoop = this.time.addEvent({ delay: Math.floor(20*1000/gameState.speed), callback: updateState, callbackScope: this, loop: true });
   }
   
-const genToysXY = ()=>{
+const genToyXY = (toy)=>{
 	let empty = false;
 	let i = 0;
 	let x = 0;
@@ -71,84 +73,119 @@ const genToysXY = ()=>{
 		empty = true;
 		x = Math.floor(Math.random()*(gameState.xMax))+1;
 		y = Math.floor(Math.random()*(gameState.yMax))+1;
-		while( i < pos.x.length && empty === true)
+		while( i < state.length && empty === true)
 		{
-			if (pos.x[i] === x && pos.y[i] === y)
+			if (state[i].x === x && state[i].y === y)
 			{
 				empty = false;
 			}
 			i++;
 		}
 	}
-	return [x,y];
+	toy.x = x;
+	toy.y = y;
 }
-  
-function updateDirection() {
-	if (gameState.direct === "right"){
-		gameState.baby.setVelocityY(0);
-		gameState.baby.setVelocityX(gameState.speed);
-		pos.x[0] += 1;
-	}
-	if (gameState.direct === "left"){
-		gameState.baby.setVelocityY(0);
-		gameState.baby.setVelocityX(-gameState.speed);
-		pos.x[0] -= 1;
-	}
-	if (gameState.direct === "down"){
-		gameState.baby.setVelocityX(0);
-		gameState.baby.setVelocityY(gameState.speed);
-		pos.y[0] += 1;
-	}
-	if (gameState.direct === "up"){
-		gameState.baby.setVelocityX(0);
-		gameState.baby.setVelocityY(-gameState.speed);
-		pos.y[0] -= 1;
-	}
-	if (pos.x[0] > gameState.xMax){
-		pos.x[0] = pos.x[0] - gameState.xMax;
-	} else if (pos.x[0] < 1) {
-		pos.x[0] = pos.x[0] + gameState.xMax;
-	}
-	
-	if (pos.y[0] > gameState.yMax){
-		pos.y[0] = pos.y[0] - gameState.yMax;
-	} else if (pos.y[0] < 1) {
-		pos.y[0] = pos.y[0] + gameState.yMax;
-	}
-	
-	for(let i = 1; i < pos.x.length ; i++)
-	{
-		pos.x[i] = pos.x[i-1];
-		pos.y[i] = pos.y[i-1];
-	}
+
+
+function updateState() {
+
+	// Definition of the baby's next move
+	updateDirection(gameState.baby, state[0].direction);
+	updatePosition(state[0],state[0].direction);
 	const debug = [
-	"Information:",
-	"x : " + pos.x,
-	"y : " + pos.y,
-	"toyX:" + gameState.toy.x,
-	"toyY:" + gameState.toy.y
-	]
-	gameState.information.setText(debug);
+		"Information:",
+		"x : " + state[0].x,
+		"y : " + state[0].y,
+		]
+	
+	// If the snake moves (is not eating), we update the positions of the body
+	if (gameState.move) {
+		const superToys = gameState.toys.getChildren();
+		for (let i = 1 ; i < state.length ; i++) {
+			updateDirection(superToys[i-1],state[i].direction);
+			updatePosition(state[i],state[i].direction);
+			state[i].direction = state[i-1].direction;
+		}
+	}
+	let top = "";
+	for(let i = 0; i<state.length; i++) {
+		top = top + "{x: " + state[i].x + ", y: " + state[i].y + ", direction: " + state[i].direction + " }\n";
+		// alert("Whaat ?");
+	}
+	
+	// The snake eats something
+	if (state[0].x === posT.x && state[0].y === posT.y) {
+		gameState.toys.add(gameState.toy);
+		state.unshift({x: state[0].x, y: state[0].y, direction: state[0].direction});
+		gameState.move = false;
+	} else {
+		gameState.move = true;
+	}
+
+	gameState.information.setText(top);
 	
 }
   
 function update(){
-	if (gameState.cursors.right.isDown && gameState.direct !== "left"){
-		gameState.direct = "right";
+	if (gameState.cursors.right.isDown && state[0].direction !== "left"){
+		state[0].direction = "right";
 	}
-	if (gameState.cursors.left.isDown && gameState.direct !== "right"){
-		gameState.direct = "left";
+	if (gameState.cursors.left.isDown && state[0].direction !== "right"){
+		state[0].direction = "left";
 	}
-	if (gameState.cursors.down.isDown && gameState.direct !== "up"){
-		gameState.direct = "down";
+	if (gameState.cursors.down.isDown && state[0].direction !== "up"){
+		state[0].direction = "down";
 	}
-	if (gameState.cursors.up.isDown && gameState.direct !== "down"){
-		gameState.direct = "up";
+	if (gameState.cursors.up.isDown && state[0].direction !== "down"){
+		state[0].direction = "up";
 	}
 	this.physics.world.wrap(gameState.baby);
+	this.physics.world.wrap(gameState.toys);
 }
 
 function render(){
 	
 }
 
+const updateDirection = (body, direction) => {
+
+	if (direction === "right") {
+		body.setVelocity(gameState.speed, 0);
+	}
+	if (direction === "left") {
+		body.setVelocity(-gameState.speed, 0);
+	}
+	if (direction === "up") {
+		body.setVelocity(0, -gameState.speed);
+	}
+	if (direction === "down") {
+		body.setVelocity(0, gameState.speed);
+	}
+}
+
+const updatePosition = (position, direction) => {
+	if (direction === "right") {
+		position.x++;
+	}
+	if (direction === "left") {
+		position.x--;
+	}
+	if (direction === "up") {
+		position.y--;
+	}
+	if (direction === "down") {
+		position.y++;
+	}
+	if (position.x > gameState.xMax){
+		position.x = position.x - gameState.xMax;
+	} else if (position.x < 1) {
+		position.x = position.x + gameState.xMax;
+	}
+	
+	if (position.y > gameState.yMax){
+		position.y = position.y - gameState.yMax;
+	} else if (position.y < 1) {
+		position.y = position.y + gameState.yMax;
+	}
+
+}
