@@ -5,7 +5,7 @@ const gameState = {
 	xMax: 20,
 	yMax: 15,
 	corridorSize: 20,
-	speed: 30, //means x pixels/sec
+	speed: 100, //means x pixels/sec
 	move: true
 };
 
@@ -86,11 +86,14 @@ const genToyXY = (toy)=>{
 	toy.y = y;
 }
 
+const geenToy = () => {
+
+}
 
 function updateState() {
 
 	// Definition of the baby's next move
-	updateDirection(gameState.baby, state[0].direction);
+	updateMove(gameState.baby, state[0].direction);
 	updatePosition(state[0],state[0].direction);
 	const debug = [
 		"Information:",
@@ -102,11 +105,14 @@ function updateState() {
 	if (gameState.move) {
 		const superToys = gameState.toys.getChildren();
 		for (let i = 1 ; i < state.length ; i++) {
-			updateDirection(superToys[i-1],state[i].direction);
+			updateMove(superToys[i-1],state[i].direction);
 			updatePosition(state[i],state[i].direction);
-			state[i].direction = state[i-1].direction;
 		}
 	}
+	for (let i = 1 ; i < state.length ; i++) {
+		state[i].direction = state[i-1].direction;
+	}
+	
 	let top = "";
 	for(let i = 0; i<state.length; i++) {
 		top = top + "{x: " + state[i].x + ", y: " + state[i].y + ", direction: " + state[i].direction + " }\n";
@@ -127,16 +133,16 @@ function updateState() {
 }
   
 function update(){
-	if (gameState.cursors.right.isDown && state[0].direction !== "left"){
+	if (gameState.cursors.right.isDown && gameState.direct !== "left"){
 		state[0].direction = "right";
 	}
-	if (gameState.cursors.left.isDown && state[0].direction !== "right"){
+	if (gameState.cursors.left.isDown && gameState.direct !== "right"){
 		state[0].direction = "left";
 	}
-	if (gameState.cursors.down.isDown && state[0].direction !== "up"){
+	if (gameState.cursors.down.isDown && gameState.direct !== "up"){
 		state[0].direction = "down";
 	}
-	if (gameState.cursors.up.isDown && state[0].direction !== "down"){
+	if (gameState.cursors.up.isDown && gameState.direct !== "down"){
 		state[0].direction = "up";
 	}
 	this.physics.world.wrap(gameState.baby);
@@ -147,19 +153,24 @@ function render(){
 	
 }
 
-const updateDirection = (body, direction) => {
+
+const updateMove = (body, direction) => {
 
 	if (direction === "right") {
 		body.setVelocity(gameState.speed, 0);
+		gameState.direct = "right";
 	}
 	if (direction === "left") {
 		body.setVelocity(-gameState.speed, 0);
+		gameState.direct = "left";
 	}
 	if (direction === "up") {
 		body.setVelocity(0, -gameState.speed);
+		gameState.direct = "up";
 	}
 	if (direction === "down") {
 		body.setVelocity(0, gameState.speed);
+		gameState.direct = "down";
 	}
 }
 
