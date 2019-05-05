@@ -37,7 +37,7 @@ const posT = {
 
 const game = new Phaser.Game(config);
 
-function preload() {
+function preload() {4
 	this.load.image('snakehead', 'Game/assets/snakehead.png');
 }
 
@@ -54,11 +54,12 @@ function create(){
 	state[0].y = gameState.yInit;
 	state[0].direction = gameState.direct;
 	gameState.toys = this.physics.add.group();
-	genToyXY(posT);
-	gameState.toy = this.physics.add.sprite(
-		Math.floor((posT.x - 1/2) * gameState.corridorSize),
-		Math.floor((posT.y - 1/2) * gameState.corridorSize),
-		'snakehead').setScale(0.5);
+	genToy(this.scene, gameState.toys);
+	// genToyXY(posT);
+	// gameState.toy = this.physics.add.sprite(
+	// 	Math.floor((posT.x - 1/2) * gameState.corridorSize),
+	// 	Math.floor((posT.y - 1/2) * gameState.corridorSize),
+	// 	'snakehead').setScale(0.5);
 	gameState.information = this.add.text(10,10,"Information: " + state[0].direction, { color: '#ffffff' });
 	gameState.timedLoop = this.time.addEvent({ delay: Math.floor(20*1000/gameState.speed), callback: updateState, callbackScope: this, loop: true });
   }
@@ -86,8 +87,12 @@ const genToyXY = (toy)=>{
 	toy.y = y;
 }
 
-const geenToy = () => {
-
+const genToy = (scene, toysGroup) => {
+	genToyXY(posT);
+	gameState.toy = scene.physics.add.sprite(
+		Math.floor((posT.x - 1/2) * gameState.corridorSize),
+		Math.floor((posT.y - 1/2) * gameState.corridorSize),
+		'snakehead').setScale(0.5);
 }
 
 function updateState() {
@@ -109,14 +114,15 @@ function updateState() {
 			updatePosition(state[i],state[i].direction);
 		}
 	}
-	for (let i = 1 ; i < state.length ; i++) {
-		state[i].direction = state[i-1].direction;
-	}
-	
-	let top = "";
+	// debug
+	let top = "posT : x = " + posT.x + ", y = " + posT.y + "\n";
 	for(let i = 0; i<state.length; i++) {
 		top = top + "{x: " + state[i].x + ", y: " + state[i].y + ", direction: " + state[i].direction + " }\n";
 		// alert("Whaat ?");
+	}
+	// The direction in which the toys move has to be updated no matter what
+	for (let i = 1 ; i < state.length ; i++) {
+		state[i].direction = state[i-1].direction;
 	}
 	
 	// The snake eats something
@@ -124,6 +130,7 @@ function updateState() {
 		gameState.toys.add(gameState.toy);
 		state.unshift({x: state[0].x, y: state[0].y, direction: state[0].direction});
 		gameState.move = false;
+		genToy();
 	} else {
 		gameState.move = true;
 	}
